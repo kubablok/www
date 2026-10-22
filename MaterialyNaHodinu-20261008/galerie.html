@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="Prohlížej alba a jejich skladby, hledej podle názvu alba, interpreta nebo písně a otevři vybranou skladbu.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lyrics viewer | Alba a skladby</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+    <h1>Lyrics viewer</h1>
+    <nav aria-label="Hlavní navigace">
+        <ul>
+            <li><a href="index.html">Domů</a></li>
+            <li><a href="galerie.html" aria-current="page">Alba</a></li>
+            <li><a href="seznam.html">Seznam písní</a></li>
+        </ul>
+    </nav>
+</header>
+
+<main>
+    <section>
+        <p class="eyebrow">Hudební knihovna</p>
+        <h2>Alba a skladby</h2>
+        <p>Vyhledej interpreta nebo album. Vyber album a otevři si jeho písně.</p>
+
+        <label class="search-label" for="music-search"><strong>Hledat v knihovně</strong></label>
+        <input id="music-search" class="music-search" type="search"
+               placeholder="Např. Ghost nebo Mary on a Cross"
+               autocomplete="off">
+        <p id="search-status" class="save-status" aria-live="polite"></p>
+    </section>
+
+    <section>
+        <h2>Vyber album</h2>
+        <div id="album-list" class="album-list"></div>
+    </section>
+
+    <section id="track-section" hidden>
+        <p class="eyebrow">Vybráno</p>
+        <h2 id="selected-album"></h2>
+        <ul id="track-list" class="song-list"></ul>
+    </section>
+</main>
+
+<footer>
+    <p><small>Lyrics viewer · Můj hudební seznam</small></p>
+</footer>
+
+<script>
+    const albums = [
+        {
+            title: "RUN IT",
+            artist: "Stray Kids",
+            cover: "images/run_it.jpg",
+            songs: [
+                {
+                    title: "RUN IT",
+                    id: "run-it"
+                },
+                {
+                    title: "This & That",
+                    id: "this-and-that"
+                },
+                {
+                    title: "After You",
+                    id: "after-you"
+                },
+                { title: "FARMING", id: "farming" },
+                { title: "I Do", id: "i-do" },
+                { title: "Way Out", id: "way-out" },
+                { title: "Back Then", id: "back-then" },
+                {
+                    title: "This & That (Festival Version)",
+                    id: "this-and-that-festival-version"
+                }
+            ]
+        },
+        {
+            title: "Back to Life",
+            artist: "Han Jisung",
+            cover: "images/back_to_life.jpg",
+            songs: [{ title: "Back to Life", artist: "Han Jisung", id: "back-to-life" }]
+        }
+    ];
+
+    const albumList = document.getElementById("album-list");
+    const trackSection = document.getElementById("track-section");
+    const trackList = document.getElementById("track-list");
+    const selectedAlbum = document.getElementById("selected-album");
+    const searchInput = document.getElementById("music-search");
+    const searchStatus = document.getElementById("search-status");
+    let selectedAlbumTitle = "";
+
+    function renderTracks(album) {
+        selectedAlbumTitle = album.title;
+        selectedAlbum.textContent = album.title;
+        trackList.replaceChildren();
+
+        album.songs.forEach((song, index) => {
+            const item = document.createElement("li");
+            const link = document.createElement("a");
+            const number = document.createElement("span");
+            number.textContent = String(index + 1).padStart(2, "0");
+            link.append(number, document.createTextNode(` ${song.title}`));
+            link.href = `lyrics.html?song=${encodeURIComponent(song.id)}`;
+            item.append(link);
+            trackList.append(item);
+        });
+
+        trackSection.hidden = false;
+    }
+
+    function renderAlbums() {
+        const query = searchInput.value.trim().toLocaleLowerCase("cs");
+        const matches = albums.filter((album) => {
+            const albumText = `${album.title} ${album.artist}`.toLocaleLowerCase("cs");
+            const songText = album.songs
+                .map((song) => song.title)
+                .join(" ")
+                .toLocaleLowerCase("cs");
+            return `${albumText} ${songText}`.includes(query);
+        });
+
+        albumList.replaceChildren();
+        matches.forEach((album) => {
+            const button = document.createElement("button");
+            const cover = document.createElement(album.cover ? "img" : "span");
+            const title = document.createElement("strong");
+            const artist = document.createElement("span");
+            button.type = "button";
+            button.className = "album-card";
+            button.setAttribute("aria-pressed", String(selectedAlbumTitle === album.title));
+            cover.className = album.cover ? "album-cover" : "album-cover-placeholder";
+            if (album.cover) {
+                cover.src = album.cover;
+                cover.alt = `Obal alba ${album.title}`;
+            } else {
+                cover.setAttribute("aria-hidden", "true");
+                cover.textContent = "♪";
+            }
+            title.textContent = album.title;
+            artist.className = "album-artist";
+            artist.textContent = album.artist;
+            button.append(cover, title, artist);
+            button.addEventListener("click", () => {
+                renderTracks(album);
+                renderAlbums();
+            });
+            albumList.append(button);
+        });
+
+        const resultLabel = matches.length === 1
+            ? "výsledek"
+            : matches.length >= 2 && matches.length <= 4
+                ? "výsledky"
+                : "výsledků";
+        searchStatus.textContent = matches.length
+            ? `${matches.length} ${resultLabel} v knihovně`
+            : "Žádná alba hledání neodpovídají.";
+
+        if (selectedAlbumTitle && !matches.some((album) => album.title === selectedAlbumTitle)) {
+            trackSection.hidden = true;
+            selectedAlbumTitle = "";
+        }
+    }
+
+    searchInput.addEventListener("input", renderAlbums);
+    renderAlbums();
+</script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="Otevři stránku vybrané písně, přehrávej dostupnou nahrávku a vlož si vlastní text, který se uloží v tomto prohlížeči.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text písně | Lyrics viewer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+    <h1>Lyrics viewer</h1>
+    <nav aria-label="Hlavní navigace">
+        <ul>
+            <li><a href="index.html">Domů</a></li>
+            <li><a href="galerie.html">Alba</a></li>
+            <li><a href="seznam.html">Seznam písní</a></li>
+        </ul>
+    </nav>
+</header>
+
+<main>
+    <section id="song-viewer" hidden>
+        <p class="eyebrow">Právě vybráno</p>
+        <h2 id="song-title"></h2>
+        <p>Vlož vlastní text písně. Automaticky se uloží v tomto prohlížeči.</p>
+        <label for="lyrics-input"><strong>Text písně</strong></label>
+        <textarea id="lyrics-input" class="lyrics-editor" placeholder="Vlož nebo napiš text písně..."></textarea>
+        <p id="save-status" class="save-status" aria-live="polite"></p>
+    </section>
+
+    <section id="invalid-song" hidden>
+        <h2>Písnička nenalezena</h2>
+        <p>Vyber písničku z <a href="seznam.html">úplného seznamu písní</a>.</p>
+    </section>
+
+    <section id="audio-section" hidden>
+        <h2>Přehrávač</h2>
+        <audio id="song-audio" controls preload="none" aria-label="Přehrávač vybrané písně"></audio>
+        <p id="audio-status" class="save-status"></p>
+    </section>
+
+    <section id="preview-section" hidden>
+        <h2>Text písně</h2>
+        <p id="lyrics-preview" class="lyrics-preview"></p>
+    </section>
+</main>
+
+<footer>
+    <p><small>Lyrics viewer · Můj hudební seznam</small></p>
+</footer>
+
+<script>
+    const songs = {
+        "mary-on-a-cross": "Mary on a Cross",
+        "run-it": "RUN IT",
+        "this-and-that": "This & That",
+        "after-you": "After You",
+        "farming": "FARMING",
+        "i-do": "I Do",
+        "way-out": "Way Out",
+        "back-then": "Back Then",
+        "this-and-that-festival-version": "This & That (Festival Version)",
+        "back-to-life": "Back to Life"
+    };
+    const audioFiles = {
+        "run-it": "songs/run-it.mp3",
+        "this-and-that": "songs/this-and-that.mp3",
+        "back-to-life": "songs/back-to-life.mp3"
+    };
+    const songId = new URLSearchParams(window.location.search).get("song");
+    const songTitle = songs[songId];
+
+    if (songTitle) {
+        const viewer = document.getElementById("song-viewer");
+        const audioSection = document.getElementById("audio-section");
+        const audio = document.getElementById("song-audio");
+        const audioStatus = document.getElementById("audio-status");
+        const previewSection = document.getElementById("preview-section");
+        const input = document.getElementById("lyrics-input");
+        const preview = document.getElementById("lyrics-preview");
+        const status = document.getElementById("save-status");
+        const storageKey = `lyrics-viewer-${songId}`;
+
+        document.title = `Lyrics viewer | ${songTitle}`;
+        document.querySelector('meta[name="description"]').content =
+            `Zobraz stránku písně ${songTitle}, přehrávej dostupnou nahrávku a ulož si vlastní text v tomto prohlížeči.`;
+        document.getElementById("song-title").textContent = songTitle;
+        viewer.hidden = false;
+        audioSection.hidden = false;
+        previewSection.hidden = false;
+
+        if (audioFiles[songId]) {
+            audio.src = audioFiles[songId];
+            audioStatus.textContent = "";
+            audioStatus.hidden = true;
+        } else {
+            audio.hidden = true;
+            audioStatus.textContent = "Pro tuto skladbu zatím není nahraný zvukový soubor.";
+        }
+
+        try {
+            input.value = localStorage.getItem(storageKey) || "";
+            status.textContent = input.value ? "Uložený text byl načten." : "Text zatím není uložený.";
+        } catch (error) {
+            status.textContent = "Prohlížeč nedovolil načíst uložený text.";
+        }
+
+        const updatePreview = () => {
+            preview.textContent = input.value || "Text písně se zobrazí tady.";
+        };
+
+        input.addEventListener("input", () => {
+            updatePreview();
+            try {
+                localStorage.setItem(storageKey, input.value);
+                status.textContent = "Text je uložený v tomto prohlížeči.";
+            } catch (error) {
+                status.textContent = "Text se nepodařilo uložit. Můžeš ho ale stále zobrazit.";
+            }
+        });
+
+        updatePreview();
+    } else {
+        document.getElementById("invalid-song").hidden = false;
+    }
+</script>
+</body>
+</html>
